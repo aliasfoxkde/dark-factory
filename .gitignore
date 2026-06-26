@@ -32,4 +32,4 @@ go.work.sum
 
 # ─── Claude Code ─────────────────────────────────────────────────────────────
 .claude/
-CLAUDE.md
+CLAUDE.mdtemplate-parts/rust/target/
