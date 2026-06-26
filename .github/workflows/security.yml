@@ -1,0 +1,96 @@
+name: Security
+
+on:
+  push:
+    branches: [$default-branch]
+  pull_request:
+  schedule:
+    - cron: '0 6 * * 1'  # Weekly Monday 6am UTC
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  DEFAULT_BRANCH: ${{ vars.DEFAULT_BRANCH || 'main' }}
+
+jobs:
+  codeql:
+    runs-on: ubuntu-latest
+    permissions:
+      security-events: write
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@v3
+        with:
+          languages: go
+          queries: security-extended
+
+      - name: Perform Analysis
+        uses: github/codeql-action/analyze@v3
+        with:
+          category: "/language:go"
+
+  govulncheck:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.24'
+
+      - name: Run govulncheck
+        run: |
+          go install golang.org/x/vuln/cmd/govulncheck@latest
+          govulncheck ./...
+
+  secrets-scan:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Check for committed secrets
+        run: |
+          echo "Checking for leaked secrets in commits..."
+          # Basic check - in production use GitGuardian, TruffleHog, or similar
+          if grep -rE "ghp_[0-9a-zA-Z]{36}|gho_[0-9a-zA-Z]{36}|AKIA[0-9A-Z]{16}" --include="*.go" --include="*.yaml" --include="*.yml" --include="*.sh" --include="*.json" --include="*.md" . 2>/dev/null; then
+            echo "WARNING: Potential secrets found in repository"
+            exit 1
+          fi
+          echo "No obvious secrets detected."
+
+  dependency-review:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check for vulnerable dependencies
+        uses: actions/dependency-review-action@v4
+
+  security-grep:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check for security anti-patterns
+        run: |
+          ISSUES=$(grep -rnE 'exec\.LookPath|os\.exec\.Command|eval\(|os\.MkdirAll.*0777|SQL Injection|password\s*=\s*['\''\"][^'\"]+['\''\"]' \
+            --include="*.go" \
+            --exclude-dir=vendor \
+            . 2>/dev/null | grep -v '_test.go' || true)
+          if [ -n "$ISSUES" ]; then
+            echo "Potential security issues found:"
+            echo "$ISSUES"
+          fi
