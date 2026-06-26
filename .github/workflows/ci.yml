@@ -31,8 +31,28 @@ env:
   STATICCHECK_VERSION: ${{ vars.STATICCHECK_VERSION || 'v0.7.0' }}
 
 jobs:
+  # ─── Detect Go project ─────────────────────────────────────────────────────
+  check-go-files:
+    runs-on: ubuntu-latest
+    outputs:
+      has_go: ${{ steps.check.outputs.has_go }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check for Go module
+        id: check
+        run: |
+          if [ -f go.mod ]; then
+            echo "has_go=true" >> $GITHUB_OUTPUT
+            echo "Go module detected"
+          else
+            echo "has_go=false" >> $GITHUB_OUTPUT
+            echo "No Go module — Go jobs will be skipped"
+          fi
+
   # ─── Go Tests ─────────────────────────────────────────────────────────────
   go-test:
+    needs: check-go-files
+    if: needs.check-go-files.outputs.has_go == 'true'
     strategy:
       fail-fast: false
       matrix:
@@ -86,6 +106,8 @@ jobs:
 
   # ─── Lint ──────────────────────────────────────────────────────────────────
   lint:
+    needs: check-go-files
+    if: needs.check-go-files.outputs.has_go == 'true'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -127,6 +149,8 @@ jobs:
 
   # ─── Build ─────────────────────────────────────────────────────────────────
   build:
+    needs: check-go-files
+    if: needs.check-go-files.outputs.has_go == 'true'
     strategy:
       fail-fast: false
       matrix:
@@ -152,6 +176,8 @@ jobs:
 
   # ─── Code Quality Grep ──────────────────────────────────────────────────────
   quality-grep:
+    needs: check-go-files
+    if: needs.check-go-files.outputs.has_go == 'true'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -166,6 +192,8 @@ jobs:
 
   # ─── Vulnerability Check ────────────────────────────────────────────────────
   vuln:
+    needs: check-go-files
+    if: needs.check-go-files.outputs.has_go == 'true'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -180,5 +208,8 @@ jobs:
           go install golang.org/x/vuln/cmd/govulncheck@latest
           govulncheck ./...
 
-# ─── Post-checkout notification ───────────────────────────────────────────
-# Required checks: go-test (all), lint, build, quality-grep, vuln
+# Required checks for branch protection:
+#   ci/go-test   → skipped when no go.mod
+#   ci/lint      → skipped when no go.mod
+#   ci/build     → skipped when no go.mod
+# When no go.mod present, check-go-files job succeeds with no failures.
