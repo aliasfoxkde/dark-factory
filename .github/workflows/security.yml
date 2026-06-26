@@ -98,13 +98,14 @@ jobs:
         run: |
           echo "Checking for leaked secrets in commits..."
           # Exclude issue templates (contain example patterns, not real secrets)
-          if grep -rE "ghp_[0-9a-zA-Z]{36}|gho_[0-9a-zA-Z]{36}|AKIA[0-9A-Z]{16}" \
-            --include="*.go" --include="*.yaml" --include="*.yml" \
-            --include="*.sh" --include="*.json" --include="*.md" \
-            --include="*.py" \
-            --exclude-dir=.github/ISSUE_TEMPLATE \
-            . 2>/dev/null; then
-            echo "WARNING: Potential secrets found in repository"
+          FOUND=$(find . \
+            \( -path './.github/ISSUE_TEMPLATE' -o -path './.git' \) -prune -o \
+            \( -name '*.go' -o -name '*.yaml' -o -name '*.yml' \
+               -o -name '*.sh' -o -name '*.json' -o -name '*.md' -o -name '*.py' \) \
+            -type f -exec grep -lE "ghp_[0-9a-zA-Z]{36}|gho_[0-9a-zA-Z]{36}|AKIA[0-9A-Z]{16}" {} \; 2>/dev/null)
+          if [ -n "$FOUND" ]; then
+            echo "WARNING: Potential secrets found in repository:"
+            echo "$FOUND"
             exit 1
           fi
           echo "No obvious secrets detected."
