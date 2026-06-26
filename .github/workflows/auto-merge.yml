@@ -28,7 +28,7 @@ jobs:
           REPO=${{ github.repository }}
 
           # Attempt to enable auto-merge; fails if conflicts or branch protection blocks
-          if ! gh pr merge $PR_NUMBER --squash --delete-branch --auto --repo $REPO 2>&1; then
+          if ! gh pr merge $PR_NUMBER --squash --delete-branch --auto 2>&1; then
             echo "failed=true" >> $GITHUB_OUTPUT
           else
             echo "failed=false" >> $GITHUB_OUTPUT
@@ -46,8 +46,4 @@ jobs:
           REPO=${{ github.repository }}
           COMMENT_BODY="🤖 Unable to auto-merge this PR. There may be merge conflicts or branch protection settings preventing automatic merging. Please resolve manually."
 
-          # Check if comment already exists
-          EXISTING=$(gh pr comment list $PR_NUMBER --repo $REPO --body "$COMMENT_BODY" --json id --jq 'length')
-          if [ "$EXISTING" == "0" ]; then
-            gh pr comment create $PR_NUMBER --repo $REPO --body "$COMMENT_BODY"
-          fi
+          gh pr comment create $PR_NUMBER --repo $REPO --body "$COMMENT_BODY" --create-if-none
