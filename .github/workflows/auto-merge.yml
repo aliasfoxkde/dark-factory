@@ -16,34 +16,16 @@ permissions:
 
 jobs:
   try-merge:
-    runs-on: ubuntu-latest
-    outputs:
-      failed: ${{ steps.merge.outputs.failed }}
-    steps:
-      - id: merge
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          PR_NUMBER=${{ github.event.pull_request.number }}
-          REPO=${{ github.repository }}
-
-          # Attempt to enable auto-merge; fails if conflicts or branch protection blocks
-          if ! gh pr merge $PR_NUMBER --squash --delete-branch --auto 2>&1; then
-            echo "failed=true" >> $GITHUB_OUTPUT
-          else
-            echo "failed=false" >> $GITHUB_OUTPUT
-          fi
-
-  post-failure:
-    needs: try-merge
-    if: needs.try-merge.outputs.failed == 'true'
+    # Only act on PRs from the same owner (no forks auto-merging)
+    if: github.event.pull_request.user.login == github.event.repository.owner.login
     runs-on: ubuntu-latest
     steps:
       - env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        name: Attempt auto-merge
         run: |
           PR_NUMBER=${{ github.event.pull_request.number }}
-          REPO=${{ github.repository }}
-          COMMENT_BODY="🤖 Unable to auto-merge this PR. There may be merge conflicts or branch protection settings preventing automatic merging. Please resolve manually."
 
-          gh pr comment create $PR_NUMBER --repo $REPO --body "$COMMENT_BODY" --create-if-none
+          # Attempt to enable auto-merge; silently succeeds or fails
+          # Branch protection or conflicts may block this — that's fine
+          gh pr merge $PR_NUMBER --squash --delete-branch --auto || true
