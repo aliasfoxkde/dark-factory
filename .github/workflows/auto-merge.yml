@@ -20,6 +20,8 @@ jobs:
     if: github.event.pull_request.user.login == github.event.repository.owner.login
     runs-on: ubuntu-latest
     steps:
+      - uses: actions/checkout@v4
+
       - env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         name: Attempt auto-merge
