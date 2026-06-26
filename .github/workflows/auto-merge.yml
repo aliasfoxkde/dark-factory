@@ -15,44 +15,19 @@ permissions:
   statuses: write
 
 jobs:
-  auto-merge:
-    if: |
-      github.event.pull_request.draft == false &&
-      github.event.pull_request.user.login == github.event.repository.owner.login
+  try-merge:
+    # Only act on PRs from the same owner (no forks auto-merging)
+    if: github.event.pull_request.user.login == github.event.repository.owner.login
     runs-on: ubuntu-latest
     steps:
-      - name: Check mergeability
-        run: |
-          PR_NUMBER=${{ github.event.pull_request.number }}
-          REPO=${{ github.repository }}
+      - uses: actions/checkout@v4
 
-          # Check if PR is mergeable
-          MERGEABLE=$(gh pr view $PR_NUMBER --repo $REPO --json mergeable --jq '.mergeable')
-          if [ "$MERGEABLE" != "MERGEABLE" ]; then
-            echo "PR is not mergeable yet. Waiting..."
-            exit 1
-          fi
-
-          echo "PR is mergeable. Proceeding with auto-merge."
-
-      - name: Enable auto-merge
-        run: |
-          gh pr merge ${{ github.event.pull_request.number }} \
-            --squash \
-            --delete-branch \
-            --auto
-        env:
+      - env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Post conflict comment if any
-        if: failure()
+        name: Attempt auto-merge
         run: |
           PR_NUMBER=${{ github.event.pull_request.number }}
-          REPO=${{ github.repository }}
-          COMMENT_BODY="🤖 Unable to auto-merge this PR. There may be merge conflicts. Please resolve them manually."
 
-          # Check if comment already exists
-          EXISTING=$(gh issue comment list --repo $REPO --issue-number $PR_NUMBER --body "$COMMENT_BODY" --json id --jq 'length')
-          if [ "$EXISTING" == "0" ]; then
-            gh issue comment create --repo $REPO --issue-number $PR_NUMBER --body "$COMMENT_BODY"
-          fi
+          # Attempt to enable auto-merge; silently succeeds or fails
+          # Branch protection or conflicts may block this — that's fine
+          gh pr merge $PR_NUMBER --squash --delete-branch --auto || true
