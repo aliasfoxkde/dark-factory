@@ -47,7 +47,7 @@ jobs:
           COMMENT_BODY="🤖 Unable to auto-merge this PR. There may be merge conflicts or branch protection settings preventing automatic merging. Please resolve manually."
 
           # Check if comment already exists
-          EXISTING=$(gh pr comment list --repo $REPO --pr-number $PR_NUMBER --body "$COMMENT_BODY" --json id --jq 'length')
+          EXISTING=$(gh pr comment list $PR_NUMBER --repo $REPO --body "$COMMENT_BODY" --json id --jq 'length')
           if [ "$EXISTING" == "0" ]; then
-            gh pr comment create --repo $REPO --pr-number $PR_NUMBER --body "$COMMENT_BODY"
+            gh pr comment create $PR_NUMBER --repo $REPO --body "$COMMENT_BODY"
           fi
