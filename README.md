@@ -55,10 +55,27 @@ git push
 
 | Part | Purpose |
 |------|---------|
-| `template-parts/go/` | Go module structure, standard packages |
+| `template-parts/go/` | Go module structure with standard packages |
+| `template-parts/python/` | Python project with uv, ruff, pytest |
+| `template-parts/typescript/` | TypeScript project with ESLint, Vitest |
+| `template-parts/rust/` | Rust project with Cargo, clippy |
 | `template-parts/e2e-testing/` | E2E test harness with AI coverage analysis |
-| `template-parts/code-library/` | Reusable snippets and documentation |
-| `template-parts/common/` | CI/CD configs, PR templates, issue templates |
+| `template-parts/code-library/` | Reusable code snippets (Go, Python, Bash) |
+| `template-parts/common/` | Shared configs (CLAUDE.md, AGENTS.md, .github/) |
+| `template-parts/atheon-enhanced/` | Security scanner integration |
+| `template-parts/vite-react-pwa/` | Vite + React PWA template |
+| `template-parts/vite-ssr/` | Vite + React SSR template |
+| `template-parts/scaffolding/` | Pre-built project templates |
+
+### Scaffolding Templates
+
+| Template | Purpose |
+|----------|---------|
+| `scaffolding/api-service/` | Go HTTP API with handlers, middleware, config |
+| `scaffolding/cli-tool/` | Go CLI with Cobra commands |
+| `scaffolding/worker-service/` | Go background worker with queue |
+| `scaffolding/data-pipeline/` | Go data processing pipeline |
+| `scaffolding/repository-ruleset/` | GitHub ruleset configuration |
 
 ## Coverage Targets
 
