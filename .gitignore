@@ -1,7 +1,7 @@
 # ─── Binaries ─────────────────────────────────────────────────────────────────
 atheon
 atheon.exe
-atheon-*
+atheon-*-*
 bin/
 dist/
 
@@ -30,6 +30,6 @@ Thumbs.db
 go.work
 go.work.sum
 
-# ─── Claude Code ─────────────────────────────────────────────────────────────
+# ─── Template Build Artifacts ───────────────────────────────────────────────
+template-parts/rust/target/
 .claude/
-CLAUDE.mdtemplate-parts/rust/target/
