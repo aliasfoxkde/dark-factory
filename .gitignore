@@ -4,6 +4,7 @@ atheon.exe
 atheon-*-*
 bin/
 dist/
+!template-parts/atheon-enhanced/
 
 # ─── Generated ────────────────────────────────────────────────────────────────
 *.out
@@ -30,7 +31,7 @@ Thumbs.db
 go.work
 go.work.sum
 
-# ─── Template Build Artifacts ───────────────────────────────────────────────
-template-parts/rust/target/
+# ─── Claude Code ─────────────────────────────────────────────────────────────
 .claude/
-!template-parts/common/.claude/
+CLAUDE.md
+template-parts/rust/target/
