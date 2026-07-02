@@ -56,9 +56,102 @@ jobs:
             echo "No Go module — Go jobs will be skipped"
           fi
 
+  # ══════════════════════════════════════════════════════════════════════════════
+  # PHASE 1: FAST CHECKS (run first, gate expensive jobs)
+  # Based on tokio's job dependency gating pattern
+  # ══════════════════════════════════════════════════════════════════════════════
+
+  # ─── Lint ──────────────────────────────────────────────────────────────────
+  lint:
+    needs: check-go-files
+    if: needs.check-go-files.outputs.has_go == 'true'
+    runs-on: ubuntu-latest
+    outputs:
+      passed: ${{ steps.lint-checks.outputs.passed }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.24'
+
+      - name: Run go vet
+        run: go vet ./...
+
+      - name: Check gofmt
+        run: |
+          UNFORMATTED=$(gofmt -l .)
+          if [ -n "$UNFORMATTED" ]; then
+            echo "gofmt must format these files:"
+            echo "$UNFORMATTED"
+            exit 1
+          fi
+
+      - name: Install golangci-lint
+        run: |
+          curl -sSfL "https://raw.githubusercontent.com/golangci/golangci-lint/${{ env.GOLANGCI_LINT_VERSION }}/install.sh" | sh -s -- -b "$(go env GOPATH)/bin" "${{ env.GOLANGCI_LINT_VERSION }}"
+          echo "$(go env GOPATH)/bin" >> $GITHUB_PATH
+
+      - name: Run golangci-lint
+        run: golangci-lint run --timeout=5m --concurrency=2
+
+      - name: Check goimports
+        run: |
+          which goimports || go install golang.org/x/tools/cmd/goimports@latest
+          UNIMPORTED=$(goimports -l .)
+          if [ -n "$UNIMPORTED" ]; then
+            echo "goimports must format these files:"
+            echo "$UNIMPORTED"
+            exit 1
+          fi
+
+      - name: Mark lint passed
+        id: lint-checks
+        run: echo "passed=true" >> $GITHUB_OUTPUT
+
+  # ─── Vulnerability Check ────────────────────────────────────────────────────
+  vuln:
+    needs: check-go-files
+    if: needs.check-go-files.outputs.has_go == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.24'
+
+      - name: Run govulncheck
+        run: |
+          go install golang.org/x/vuln/cmd/govulncheck@latest
+          govulncheck ./...
+
+  # ─── Code Quality Grep ──────────────────────────────────────────────────────
+  quality-grep:
+    needs: check-go-files
+    if: needs.check-go-files.outputs.has_go == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check for TODO/FIX without issue refs
+        run: |
+          TODOS=$(grep -rnE 'TODO|FIXME|XXX|HACK' --include="*.go" . | grep -vE 'TODO.*#[0-9]+|FIXME.*#[0-9]+' || true)
+          if [ -n "$TODOS" ]; then
+            echo "Found TODO/FIX without issue references:"
+            echo "$TODOS"
+          fi
+
+  # ══════════════════════════════════════════════════════════════════════════════
+  # PHASE 2: TESTS (gated on lint passing)
+  # fail-fast: false for full results (per tarpaulin/ripgrep patterns)
+  # ══════════════════════════════════════════════════════════════════════════════
+
   # ─── Go Tests ─────────────────────────────────────────────────────────────
   go-test:
-    needs: check-go-files
+    needs: [check-go-files, lint]
     if: needs.check-go-files.outputs.has_go == 'true'
     strategy:
       fail-fast: false
@@ -111,9 +204,9 @@ jobs:
           name: test-results
           path: coverage.out
 
-  # ─── Lint ──────────────────────────────────────────────────────────────────
-  lint:
-    needs: check-go-files
+  # ─── ARM64 cross-compilation test ─────────────────────────────────────────
+  test-arm64:
+    needs: [check-go-files, lint]
     if: needs.check-go-files.outputs.has_go == 'true'
     runs-on: ubuntu-latest
     steps:
@@ -124,39 +217,31 @@ jobs:
         with:
           go-version: '1.24'
 
-      - name: Run go vet
-        run: go vet ./...
-
-      - name: Check gofmt
+      - name: Install cross-compilation toolchain
         run: |
-          UNFORMATTED=$(gofmt -l .)
-          if [ -n "$UNFORMATTED" ]; then
-            echo "gofmt must format these files:"
-            echo "$UNFORMATTED"
-            exit 1
-          fi
+          sudo apt-get update
+          sudo apt-get install -y gcc-aarch64-linux-gnu
 
-      - name: Install golangci-lint
+      - name: Build for ARM64
+        env:
+          GOOS: linux
+          GOARCH: arm64
+          CC: aarch64-linux-gnu-gcc
+          CGO_ENABLED: '1'
         run: |
-          curl -sSfL "https://raw.githubusercontent.com/golangci/golangci-lint/${{ env.GOLANGCI_LINT_VERSION }}/install.sh" | sh -s -- -b "$(go env GOPATH)/bin" "${{ env.GOLANGCI_LINT_VERSION }}"
-          echo "$(go env GOPATH)/bin" >> $GITHUB_PATH
+          go build -o bin/atheon-arm64 ./cmd/atheon
 
-      - name: Run golangci-lint
-        run: golangci-lint run --timeout=5m --concurrency=2
-
-      - name: Check goimports
+      - name: Verify ARM64 binary
         run: |
-          which goimports || go install golang.org/x/tools/cmd/goimports@latest
-          UNIMPORTED=$(goimports -l .)
-          if [ -n "$UNIMPORTED" ]; then
-            echo "goimports must format these files:"
-            echo "$UNIMPORTED"
-            exit 1
-          fi
+          file bin/atheon-arm64
+
+  # ══════════════════════════════════════════════════════════════════════════════
+  # PHASE 3: BUILD (gated on lint passing, parallel with tests)
+  # ══════════════════════════════════════════════════════════════════════════════
 
   # ─── Build ─────────────────────────────────────────────────────────────────
   build:
-    needs: check-go-files
+    needs: [check-go-files, lint]
     if: needs.check-go-files.outputs.has_go == 'true'
     strategy:
       fail-fast: false
@@ -180,40 +265,6 @@ jobs:
         with:
           name: binaries-${{ matrix.os }}
           path: bin/
-
-  # ─── Code Quality Grep ──────────────────────────────────────────────────────
-  quality-grep:
-    needs: check-go-files
-    if: needs.check-go-files.outputs.has_go == 'true'
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Check for TODO/FIX without issue refs
-        run: |
-          TODOS=$(grep -rnE 'TODO|FIXME|XXX|HACK' --include="*.go" . | grep -vE 'TODO.*#[0-9]+|FIXME.*#[0-9]+' || true)
-          if [ -n "$TODOS" ]; then
-            echo "Found TODO/FIX without issue references:"
-            echo "$TODOS"
-          fi
-
-  # ─── Vulnerability Check ────────────────────────────────────────────────────
-  vuln:
-    needs: check-go-files
-    if: needs.check-go-files.outputs.has_go == 'true'
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Set up Go
-        uses: actions/setup-go@v5
-        with:
-          go-version: '1.24'
-
-      - name: Run govulncheck
-        run: |
-          go install golang.org/x/vuln/cmd/govulncheck@latest
-          govulncheck ./...
 
 # Required checks for branch protection:
 #   ci/go-test   → skipped when no go.mod
