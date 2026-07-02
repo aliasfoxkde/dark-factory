@@ -1,9 +1,10 @@
 # ─── Binaries ─────────────────────────────────────────────────────────────────
 atheon
 atheon.exe
-atheon-*
+atheon-*-*
 bin/
 dist/
+!template-parts/atheon-enhanced/
 
 # ─── Generated ────────────────────────────────────────────────────────────────
 *.out
