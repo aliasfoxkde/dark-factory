@@ -1,7 +1,6 @@
 # Dark Factory pre-commit configuration
 # ─────────────────────────────────────────────────────────────────────────────
 # Installation: pip install pre-commit && pre-commit install
-# Or: go install github.com/alpha。二乗.pre-commit/cmd/pre-commit@latest
 # ─────────────────────────────────────────────────────────────────────────────
 repos:
   # ─── Local Go hooks ─────────────────────────────────────────────────────

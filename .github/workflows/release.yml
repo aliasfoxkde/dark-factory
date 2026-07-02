@@ -21,8 +21,7 @@ env:
 
 jobs:
   release:
-    # Only run on canonical repo or if RELEASE_ENABLED is set
-    if: github.repository == 'aliasfoxkde/dark-factory' || vars.RELEASE_ENABLED == 'true'
+    if: github.repository_owner == 'aliasfoxkde'  # Canonical repo only
     runs-on: ubuntu-latest
     environment: release
     permissions:

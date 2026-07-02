@@ -65,9 +65,6 @@ done
 FULL_REPO="$OWNER/$REPO_NAME"
 DESCRIPTION="${DESCRIPTION:-Dark Factory powered repository}"
 
-# Determine repo root (script dir parent)
-REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-
 # ─── Step 1: Create repository ────────────────────────────────────────────────
 STEP "Creating GitHub repository: $FULL_REPO"
 if $FROM_TEMPLATE; then
