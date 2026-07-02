@@ -113,8 +113,8 @@ jobs:
         id: fetch-base
         run: |
           # Download base benchmark from main branch artifact
-          gh api repos/{owner}/{repo}/actions/artifacts --jq '.artifacts[] | select(.name == "benchmark-base") | .id' 2>/dev/null | head -1 | while read artifact_id; do
-            gh api repos/{owner}/{repo}/actions/artifacts/$artifact_id/archive --output benchmark_base.json -L 302 2>/dev/null || true
+          gh api repos/${{ github.repository }}/actions/artifacts --jq '.artifacts[] | select(.name == "benchmark-base") | .id' 2>/dev/null | head -1 | while read artifact_id; do
+            gh api repos/${{ github.repository }}/actions/artifacts/$artifact_id/archive --output benchmark_base.json -L 302 2>/dev/null || true
           done
 
           # Alternative: try to download via download-artifact action
@@ -122,8 +122,8 @@ jobs:
             # Try with a workaround - get the latest run on main that uploaded benchmark-base
             gh run list --workflow=benchmark.yml --branch=main --status=completed --json=id --jq '.[0].id' 2>/dev/null | while read run_id; do
               if [ -n "$run_id" ]; then
-                gh api repos/{owner}/{repo}/actions/runs/$run_id/artifacts --jq '.artifacts[] | select(.name == "benchmark-base") | .id' 2>/dev/null | head -1 | while read artifact_id; do
-                  gh api repos/{owner}/{repo}/actions/artifacts/$artifact_id/archive --output benchmark_base.json -L 302 2>/dev/null || true
+                gh api repos/${{ github.repository }}/actions/runs/$run_id/artifacts --jq '.artifacts[] | select(.name == "benchmark-base") | .id' 2>/dev/null | head -1 | while read artifact_id; do
+                  gh api repos/${{ github.repository }}/actions/artifacts/$artifact_id/archive --output benchmark_base.json -L 302 2>/dev/null || true
                 done
               fi
             done
@@ -184,7 +184,7 @@ jobs:
         id: find-comment
         run: |
           COMMENT_ID=""
-          gh api repos/{owner}/{repo}/issues/${{ github.event.pull_request.number }}/comments --jq '.[] | select(.body | contains("## Benchmark Results")) | .id' 2>/dev/null | while read id; do
+          gh api repos/${{ github.repository }}/issues/${{ github.event.pull_request.number }}/comments --jq '.[] | select(.body | contains("## Benchmark Results")) | .id' 2>/dev/null | while read id; do
             COMMENT_ID=$id
           done
           echo "comment_id=$COMMENT_ID" >> $GITHUB_OUTPUT

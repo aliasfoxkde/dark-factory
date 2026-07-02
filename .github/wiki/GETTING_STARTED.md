@@ -48,6 +48,6 @@ All configuration is via environment variables:
 
 ## Next Steps
 
-- Read the [Architecture documentation](../ARCHITECTURE.md)
-- Check the [Contributing guide](../CONTRIBUTING.md)
-- Browse the [Pattern Library](../PATTERN_FORMAT.md)
+- Read the [Architecture documentation](./ARCHITECTURE)
+- Check the [Contributing guide](./CONTRIBUTING)
+- Browse the [Pattern Library](./PATTERN_DEVELOPMENT)
