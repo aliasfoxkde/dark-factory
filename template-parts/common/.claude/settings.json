@@ -1,0 +1,40 @@
+{
+  // Claude Code Settings - Customize for your project
+  // See: https://docs.claude.com/claude-code.html
+
+  "permissions": {
+    "allow": [
+      "Bash:git",
+      "Bash:gh",
+      "Bash:make",
+      "Bash:go",
+      "Bash:curl",
+      "Bash:find"
+      // Add project-specific permissions as needed
+    ]
+  },
+
+  "mcpServers": {
+    // Add MCP servers for your project
+    // Example: Codex, GitHub, filesystem, etc.
+    "codebase-memory": {
+      "command": "codebase-memory-mcp",
+      "args": []
+    }
+  },
+
+  "codebaseMemory": {
+    "indexOnStart": true,
+    "excludePatterns": [
+      "**/node_modules/**",
+      "**/.git/**",
+      "**/vendor/**",
+      "**/dist/**",
+      "**/build/**",
+      "**/_build/**",
+      "**/target/**",
+      "**/*.pb.go",
+      "**/*_test.go"
+    ]
+  }
+}
