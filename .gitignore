@@ -33,3 +33,4 @@ go.work.sum
 # ─── Template Build Artifacts ───────────────────────────────────────────────
 template-parts/rust/target/
 .claude/
+!template-parts/common/.claude/

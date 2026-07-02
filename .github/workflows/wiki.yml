@@ -9,7 +9,8 @@ on:
 
 jobs:
   publish-wiki:
-    if: github.repository_owner == 'aliasfoxkde'
+    # Only run if WIKI_ENABLED variable is set to 'true' or on canonical repo
+    if: vars.WIKI_ENABLED == 'true' || github.repository == 'aliasfoxkde/dark-factory'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
