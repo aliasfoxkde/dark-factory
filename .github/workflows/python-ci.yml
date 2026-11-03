@@ -32,7 +32,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Python CI check
-        run: echo "Python CI check passed — repository validated"
+        run: echo "No Python-specific validation is required for this change; Python jobs are selected separately when a root Python project is present."
 
   # ─── Detect Python project ────────────────────────────────────────────────────
   check-py-files:

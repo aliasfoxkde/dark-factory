@@ -1,6 +1,6 @@
 # Dark Factory
 
-> **AI-first, 90%+ coverage, Dark Factory powered repository template.**
+> **AI-first repository template with configurable quality gates.**
 
 Dark Factory is an opinionated development methodology and GitHub repo template
 for building production-grade software with automated test, code, and
@@ -9,9 +9,9 @@ through CI/CD, pre-commit/push hooks, and GitHub Actions.
 
 ## Features
 
-- ✅ **90%+ automated coverage** — Built into the workflow, not bolted on at the end
+- ✅ **Coverage enforcement** — Go and Python CI default to a 70% threshold; the Go template's Codecov configuration separately targets 90% project and patch coverage. These are configured gates, not a claim about measured coverage in every generated repository.
 - 🔒 **Strict pre-commit/push hooks** — Format, lint, test, and coverage gates
-- ⚡ **Consolidated CI/CD** — One workflow to rule them all, with AI-assisted review
+- ⚡ **Layered CI/CD** — Language-specific CI, security scans, and release workflows, with AI-assisted review
 - 📦 **Template parts** — Modular, language-specific templates (Go, E2E, Code Library)
 - 🏷️ **Branch protection** — Required reviews, required status checks, auto-delete branches
 - 🔄 **Dependabot** — Automated dependency updates for Go and GitHub Actions

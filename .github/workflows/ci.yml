@@ -36,7 +36,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: CI check
-        run: echo "CI check passed — repository validated"
+        run: echo "No Go-specific validation is required for this change; Go jobs are selected separately when a root Go module is present."
 
   # ─── Detect Go project ─────────────────────────────────────────────────────
   check-go-files:
